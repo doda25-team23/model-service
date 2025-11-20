@@ -1,0 +1,38 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+
+# Dataset (will be downloaded during build)
+smsspamcollection/
+SMSSpamCollection
+
+# Documentation
+README.md
+*.md
+
+# Jupyter notebooks
+*.ipynb
+.ipynb_checkpoints/
+
+# Tests
+test/
+tests/
+*.test.py
