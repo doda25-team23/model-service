@@ -1,0 +1,14 @@
+# Python virtual env
+.venv/
+
+# Output artifacts (models, plots, joblib files)
+output/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# IDE files (optional but recommended)
+.idea/
+.vscode/
+
