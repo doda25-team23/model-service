@@ -4,30 +4,32 @@ WORKDIR /app
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc \
-    g++ \
+        gcc \
+        g++ \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements and install Python dependencies
+# Install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Download NLTK data
+# Download required NLTK data
 RUN python -c "import nltk; nltk.download('stopwords'); nltk.download('punkt')"
 
-# Copy source code
+# Copy application code
 COPY src ./src
 
-# Create output directory for model files
-RUN mkdir -p output
+# ===== F6: Flexible port configuration =====
+ENV MODEL_PORT=8081
 
-# Download dataset and prepare model
-RUN python src/get_data.py && \
-    python src/text_preprocessing.py && \
-    python src/text_classification.py
+# ===== F10: External model location =====
+# A mounted volume will supply the model OR the app downloads it at runtime.
+ENV MODEL_DIR=/app/model
 
-# Expose the API port
-EXPOSE 8081
+# Create directory for mounted or downloaded models
+RUN mkdir -p ${MODEL_DIR}
 
-# Run the Flask application
-CMD ["python", "src/serve_model.py"]
+# Expose dynamic port
+EXPOSE ${MODEL_PORT}
+
+# Run Flask app with dynamic port + external model directory
+CMD ["sh", "-c", "python src/serve_model.py --port=${MODEL_PORT} --model_dir=${MODEL_DIR}"]
