@@ -4,29 +4,32 @@ WORKDIR /app
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc \
-    g++ \
+        gcc \
+        g++ \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements and install Python dependencies
+# Install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Download NLTK data at build time (optional but okay)
+# Download NLTK data (required by the app)
 RUN python -c "import nltk; nltk.download('stopwords'); nltk.download('punkt')"
 
-# Copy application source code
+# Copy application code
 COPY src ./src
 
-# F10: external model dir
-ENV MODEL_DIR=/models
+# ===== F6: Flexible port configuration =====
+ENV MODEL_PORT=8081
 
-# F10: model dir inside container
-RUN mkdir -p /models
+# ===== F10: External model location =====
+# The model will either come from a mounted volume or be downloaded at runtime.
+ENV MODEL_DIR=/app/model
 
+# Ensure the directory exists (for volume or download)
+RUN mkdir -p ${MODEL_DIR}
 
-# Expose the API port
-EXPOSE 8081
+# Expose the port
+EXPOSE ${MODEL_PORT}
 
-# F10: we download model if missing then run
-CMD ["sh", "-c", "python src/download_model.py && python src/serve_model.py"]
+# ===== F10: Download model if missing, then start the service =====
+CMD ["sh", "-c", "python src/download_model.py && python src/serve_model.py --port=${MODEL_PORT} --model_dir=${MODEL_DIR}"]

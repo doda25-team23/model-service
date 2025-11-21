@@ -56,3 +56,10 @@ Once its startup has finished, you can either access [localhost:8081/apidocs](ht
       "result": "ham",
       "sms": "test ..."
     }
+
+## Model Releases (F9)
+The `Train and Release Model` GitHub Actions workflow can be triggered manually.
+It trains the SMS classifier, assigns a timestamp-based version, and publishes
+the model artifacts as assets of a GitHub Release (see the Releases tab).
+
+
