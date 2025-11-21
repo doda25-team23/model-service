@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Download required NLTK data
+# Download NLTK data (required by the app)
 RUN python -c "import nltk; nltk.download('stopwords'); nltk.download('punkt')"
 
 # Copy application code
@@ -22,14 +22,14 @@ COPY src ./src
 ENV MODEL_PORT=8081
 
 # ===== F10: External model location =====
-# A mounted volume will supply the model OR the app downloads it at runtime.
+# The model will either come from a mounted volume or be downloaded at runtime.
 ENV MODEL_DIR=/app/model
 
-# Create directory for mounted or downloaded models
+# Ensure the directory exists (for volume or download)
 RUN mkdir -p ${MODEL_DIR}
 
-# Expose dynamic port
+# Expose the port
 EXPOSE ${MODEL_PORT}
 
-# Run Flask app with dynamic port + external model directory
-CMD ["sh", "-c", "python src/serve_model.py --port=${MODEL_PORT} --model_dir=${MODEL_DIR}"]
+# ===== F10: Download model if missing, then start the service =====
+CMD ["sh", "-c", "python src/download_model.py && python src/serve_model.py --port=${MODEL_PORT} --model_dir=${MODEL_DIR}"]
