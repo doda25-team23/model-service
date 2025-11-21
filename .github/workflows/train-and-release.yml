@@ -3,6 +3,9 @@ name: Train and Release Model
 on:
   workflow_dispatch:  # we manually trigger
 
+permissions:
+  contents: write
+
 jobs:
   train-and-release:
     runs-on: ubuntu-latest
