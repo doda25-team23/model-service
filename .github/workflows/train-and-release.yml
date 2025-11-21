@@ -1,0 +1,77 @@
+name: Train and Release Model
+
+on:
+  workflow_dispatch:  # we manually trigger
+
+jobs:
+  train-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Compute model version
+        id: version
+        run: |
+          # Example: model-20251121-223045
+          VERSION="model-$(date -u +'%Y%m%d-%H%M%S')"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Train model
+        run: |
+          mkdir -p output
+          python src/text_preprocessing.py
+          python src/text_classification.py
+
+      - name: Prepare artifacts
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          mkdir -p "artifacts/$VERSION"
+
+          cp output/model.joblib              "artifacts/$VERSION/" || true
+          cp output/preprocessor.joblib       "artifacts/$VERSION/" || true
+          cp output/preprocessed_data.joblib  "artifacts/$VERSION/" || true
+          cp output/accuracy_scores.png       "artifacts/$VERSION/" || true
+          cp output/misclassified_msgs.txt    "artifacts/$VERSION/" || true
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          release_name: "ML model ${{ steps.version.outputs.version }}"
+          draft: false
+          prerelease: false
+
+      - name: Upload model artifacts to release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          UPLOAD_URL="${{ steps.create_release.outputs.upload_url }}"
+          # strip the {?name,label} suffix
+          UPLOAD_URL="${UPLOAD_URL%\{*}"
+
+          for file in artifacts/"$VERSION"/*; do
+            FILENAME=$(basename "$file")
+            echo "Uploading $FILENAME"
+            curl -sSL \
+              -X POST \
+              -H "Authorization: token $GITHUB_TOKEN" \
+              -H "Content-Type: application/octet-stream" \
+              --data-binary @"$file" \
+              "${UPLOAD_URL}?name=${FILENAME}"
+          done
