@@ -1,6 +1,7 @@
 """
-Flask API of the SMS Spam detection model model.
+Flask API of the SMS Spam detection model.
 """
+import os
 import joblib
 from flask import Flask, jsonify, request
 from flasgger import Swagger
@@ -10,6 +11,14 @@ from text_preprocessing import prepare, _extract_message_len, _text_process
 
 app = Flask(__name__)
 swagger = Swagger(app)
+
+# F10 Implementation
+MODEL_DIR = os.environ.get("MODEL_DIR", "/models")
+MODEL_PATH = os.path.join(MODEL_DIR, "model.joblib")
+
+print(f"Loading model from: {MODEL_PATH}")
+model = joblib.load(MODEL_PATH)   # we load this once at start up
+
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -36,10 +45,10 @@ def predict():
     """
     input_data = request.get_json()
     sms = input_data.get('sms')
+
     processed_sms = prepare(sms)
-    model = joblib.load('output/model.joblib')
     prediction = model.predict(processed_sms)[0]
-    
+
     res = {
         "result": prediction,
         "classifier": "decision tree",
@@ -48,6 +57,6 @@ def predict():
     print(res)
     return jsonify(res)
 
+
 if __name__ == '__main__':
-    #clf = joblib.load('output/model.joblib')
     app.run(host="0.0.0.0", port=8081, debug=True)

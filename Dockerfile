@@ -12,22 +12,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Download NLTK data
+# Download NLTK data at build time (optional but okay)
 RUN python -c "import nltk; nltk.download('stopwords'); nltk.download('punkt')"
 
-# Copy source code
+# Copy application source code
 COPY src ./src
 
-# Create output directory for model files
-RUN mkdir -p output
+# F10: external model dir
+ENV MODEL_DIR=/models
 
-# Download dataset and prepare model
-RUN python src/get_data.py && \
-    python src/text_preprocessing.py && \
-    python src/text_classification.py
+# F10: model dir inside container
+RUN mkdir -p /models
+
 
 # Expose the API port
 EXPOSE 8081
 
-# Run the Flask application
-CMD ["python", "src/serve_model.py"]
+# F10: we download model if missing then run
+CMD ["sh", "-c", "python src/download_model.py && python src/serve_model.py"]
